@@ -2,7 +2,7 @@
 
 Detect and **permanently redact** personally identifiable information (PII) in
 PDF files, with a Dropbox integration for pulling a source file and writing the
-redacted copy back. Built as a demo-ready minimum viable product.
+redacted copy back. Built as a minimum viable product.
 
 This MVP delivers the core slice of the larger vision: *retrieve a user-selected
 PDF → detect configurable PII → produce a verified redacted copy.* The
@@ -68,7 +68,7 @@ pii-redactor/
 │   ├── detectors.py        Predefined detectors + checksum validators
 │   ├── engine.py           Detection orchestration, custom rules, overlap merge
 │   └── redactor.py         Surgical + flatten redaction + verification + previews
-├── templates/index.html    Single-page demo UI
+├── templates/index.html    Single-page UI
 ├── samples/
 │   ├── make_sample.py       Generates a synthetic PII document
 │   ├── sample_pii.pdf       Synthetic source document
@@ -120,8 +120,8 @@ python app.py
 ```
 
 The Dropbox tab then lets you pick a PDF by path (or from a dropdown) and tick
-"write redacted copy back to Dropbox." For the demo a single access token is
-fine; production should use the full OAuth 2 + refresh-token flow.
+"write redacted copy back to Dropbox." A single access token is enough for
+local use; production should use the full OAuth 2 + refresh-token flow.
 
 ---
 
@@ -143,27 +143,6 @@ fine; production should use the full OAuth 2 + refresh-token flow.
 
 Adding a predefined type is a one-line entry in `pii_engine/detectors.py`.
 Custom rules (label + regex) can be added live in the UI or via the API.
-
----
-
-## Suggested demo script (5 minutes)
-
-1. Open with the **sample** document — point out the SSN, credit card, AU TFN
-   and Medicare numbers in plain sight.
-2. Hit **Redact PDF** (surgical default). The banner should say **no extractable
-   PII**. Switch to **Flatten** and re-run: the banner says **text layer
-   removed — visual miss not proven**.
-3. Toggle **Before / After** to show the boxes landing exactly on the PII.
-4. Point out the **expired test card is left untouched** — the Luhn validator
-   rejected it, demonstrating low false positives (compliance teams care a lot
-   about over-redaction).
-5. Add a **custom rule** (`Employee ID`, `EMP-\d{5}`) and re-run to show
-   extensibility for company-specific identifiers.
-6. Show the **audit report** table / JSON — every redaction logged with masked
-   values for a defensible audit trail.
-7. Close on the **Dropbox** tab: same engine, but the source comes from and the
-   redacted copy returns to Dropbox — the bridge to the admin auto-redaction
-   vision.
 
 ---
 
@@ -202,7 +181,7 @@ or a session from /api/unlock.
 
 ---
 
-## Limitations (be upfront in the demo)
+## Limitations
 
 - Works on text-based PDFs; scanned/image PDFs need the OCR step above.
 - Regex-based detection has inherent recall/precision limits; the phone heuristic
