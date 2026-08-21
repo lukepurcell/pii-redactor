@@ -1,0 +1,23 @@
+# OS / editor
+.DS_Store
+.cursor/
+
+# Local tool state
+.claude/
+.pytest_cache/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local runtime outputs and debug artifacts
+_work/
+
+# Local secrets / env files
+.env
+.env.*
+*.local.json
+
+# Optional test / build noise
+*.log

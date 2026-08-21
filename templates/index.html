@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PII Redactor — MVP</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --panel:#ffffff; --ink:#13171f; --muted:#5b6472;
+    --line:#e6eaf0; --accent:#0061fe; --accent-ink:#fff;
+    --high:#d6253b; --medium:#c2790b; --low:#3a7d44; --ok:#16855c; --okbg:#e7f7ef;
+    --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{background:var(--panel);border-bottom:1px solid var(--line);padding:18px 28px;
+    display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:5}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-weight:700;font-size:18px}
+  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+  header p{margin:0;color:var(--muted);font-size:12.5px}
+  .wrap{max-width:1180px;margin:24px auto;padding:0 20px;display:grid;
+    grid-template-columns:380px 1fr;gap:20px;align-items:start}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 18px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+    margin:0 0 12px}
+  .step{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);color:#fff;font-size:11px;margin-right:7px;vertical-align:1px}
+  .tabs{display:flex;gap:6px;background:#eef1f6;padding:4px;border-radius:10px;margin-bottom:12px}
+  .tabs button{flex:1;border:0;background:transparent;padding:7px 8px;border-radius:7px;
+    font-size:13px;color:var(--muted);cursor:pointer;font-weight:550}
+  .tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .pane{display:none} .pane.active{display:block}
+  label.file,input[type=text]{width:100%}
+  input[type=text]{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit}
+  .muted{color:var(--muted);font-size:13px}
+  .group{margin-bottom:14px}
+  .group h3{font-size:12.5px;margin:0 0 7px;color:var(--ink);font-weight:650}
+  .chk{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px}
+  .chk:hover{background:#f4f7fb}
+  .chk input{width:16px;height:16px;accent-color:var(--accent)}
+  .chk .lab{flex:1;font-size:13.5px}
+  .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
+  .b-high{background:#fde8eb;color:var(--high)} .b-medium{background:#fbf0dd;color:var(--medium)}
+  .b-low{background:#e6f4ea;color:var(--low)}
+  .customrow{display:flex;gap:6px;margin-bottom:6px}
+  .customrow input{flex:1}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff;width:100%;font-size:15px;padding:13px}
+  .btn.primary:disabled{opacity:.55;cursor:progress}
+  .btn.ghost{background:#eef1f6;color:var(--ink)}
+  .btn.link{background:transparent;color:var(--accent);padding:4px 6px}
+  .addbtn{background:#eef1f6;color:var(--ink);border-radius:8px;border:0;padding:8px 10px;cursor:pointer;font-weight:600;font-size:13px}
+  select{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;width:100%}
+  /* results */
+  #results{min-height:200px}
+  .placeholder{display:grid;place-items:center;height:340px;color:var(--muted);text-align:center}
+  .placeholder svg{opacity:.35;margin-bottom:10px}
+  .verify{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:11px;font-weight:600;margin-bottom:14px}
+  .verify.pass{background:var(--okbg);color:var(--ok)}
+  .verify.fail{background:#fde8eb;color:var(--high)}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .stat{background:#f4f7fb;border-radius:11px;padding:10px 14px;min-width:96px}
+  .stat b{display:block;font-size:22px;letter-spacing:-.02em}
+  .stat span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .chip{font-size:12.5px;background:#eef1f6;border-radius:999px;padding:5px 11px}
+  .chip b{color:var(--accent)}
+  .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .toggle{display:flex;background:#eef1f6;border-radius:9px;padding:3px}
+  .toggle button{border:0;background:transparent;padding:6px 14px;border-radius:7px;font:inherit;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer}
+  .toggle button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .pageimg{width:100%;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;display:block}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  td code{background:#f4f7fb;padding:1px 6px;border-radius:6px}
+  .downloads{display:flex;gap:10px;margin:16px 0 4px}
+  .dbx-note{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .gate{position:fixed;inset:0;background:rgba(246,248,251,.92);z-index:20;
+    display:none;place-items:center;padding:24px}
+  .gate.open{display:grid}
+  .gate .card{max-width:420px;width:100%}
+  .mode-row{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="gate" id="authGate">
+  <div class="card">
+    <h2>Unlock</h2>
+    <p class="muted">Enter the shared <code>REDACTOR_API_KEY</code> for this instance.</p>
+    <input type="password" id="apiKeyInput" placeholder="API key" autocomplete="off">
+    <p class="err" id="authErr" style="display:none;margin-top:10px"></p>
+    <button class="btn primary" id="unlockBtn" style="margin-top:12px">Continue</button>
+  </div>
+</div>
+<header>
+  <div class="logo">R</div>
+  <div>
+    <h1>PII Redactor</h1>
+    <p>Detect &amp; permanently redact sensitive data in PDFs · MVP demo</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: controls -->
+  <div>
+    <div class="card" style="margin-bottom:20px">
+      <h2><span class="step">1</span>Source document</h2>
+      <div class="tabs" id="srcTabs">
+        <button data-src="sample" class="active">Sample</button>
+        <button data-src="upload">Upload PDF</button>
+        <button data-src="dropbox">Dropbox</button>
+      </div>
+      <div class="pane active" data-pane="sample">
+        <p class="muted">Use the bundled <b>Northwind Logistics onboarding record</b> — a synthetic document seeded with SSN, credit card, AU TFN/Medicare, emails and phone numbers.</p>
+      </div>
+      <div class="pane" data-pane="upload">
+        <input type="file" id="fileInput" accept="application/pdf">
+        <p class="muted">PDF up to 50&nbsp;MB. Text-based PDFs work best (scanned PDFs need OCR — see README).</p>
+      </div>
+      <div class="pane" data-pane="dropbox">
+        <input type="text" id="dbxPath" placeholder="/folder/document.pdf">
+        <div id="dbxList"></div>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="uploadBack"><span class="lab">Write redacted copy back to Dropbox</span></label>
+        <p class="dbx-note" id="dbxStatus">Checking Dropbox connection…</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <h2><span class="step">2</span>PII rules</h2>
+      <div id="detectorList"></div>
+      <div class="group" style="margin-top:6px">
+        <h3>Custom rules (regex)</h3>
+        <div id="customRules"></div>
+        <button class="addbtn" id="addRule">+ Add custom rule</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <h2><span class="step">3</span>Output</h2>
+      <div class="mode-row">
+        <label class="chk"><input type="radio" name="mode" value="surgical" checked>
+          <span class="lab">Surgical (default) — remove PII runs, keep other text selectable</span></label>
+        <label class="chk"><input type="radio" name="mode" value="flatten">
+          <span class="lab">Flatten — rasterize pages (no text layer; high-assurance)</span></label>
+      </div>
+      <select id="dpi">
+        <option value="150">Standard quality (150 dpi)</option>
+        <option value="200" selected>High quality (200 dpi)</option>
+        <option value="300">Maximum quality (300 dpi)</option>
+      </select>
+      <div class="group" style="margin-top:12px">
+        <h3>Box tuning</h3>
+        <div class="tunerow">
+          <input type="text" id="pad" value="2" placeholder="Padding (pt)">
+          <input type="text" id="verticalShiftMm" value="1.0" placeholder="Upward shift (mm)">
+        </div>
+        <div class="tunerow">
+          <input type="text" id="topExtraMm" value="0.0" placeholder="Top extra height (mm)">
+          <input type="text" id="bottomExtraMm" value="0.0" placeholder="Bottom extra height (mm)">
+        </div>
+        <p class="muted">Positive shift moves boxes upward. Top/bottom extra height makes the box taller without changing width.</p>
+      </div>
+      <label class="chk" style="margin-bottom:10px">
+        <input type="checkbox" id="livePreview" checked>
+        <span class="lab">Live preview</span>
+      </label>
+      <p class="muted" style="margin-top:-6px;margin-bottom:14px">Auto-refreshes the preview after detector and tuning changes.</p>
+      <p class="muted" style="margin-bottom:14px">Surgical keeps non-PII text. Flatten paints over a raster and is used automatically on pages with no extractable words. Flatten success means the text layer is gone — not that every pixel was covered.</p>
+      <button class="btn primary" id="runBtn">Redact PDF</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: results -->
+  <div class="card" id="results">
+    <div class="placeholder" id="placeholder">
+      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5"/><rect x="12.5" y="14.5" width="6" height="4" rx="1" fill="currentColor" stroke="none"/></svg>
+      <div>Choose a source and rules, then <b>Redact PDF</b>.<br>Results, before/after preview and an audit report appear here.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const sevBadge = s => `<span class="badge b-${s}">${s}</span>`;
+let activeSrc = "sample";
+let autoRunTimer = null;
+let requestInFlight = false;
+let rerunPending = false;
+
+let apiKey = sessionStorage.getItem("apiKey") || "";
+
+function authHeaders(extra){
+  const h = Object.assign({}, extra || {});
+  if(apiKey) h["Authorization"] = "Bearer " + apiKey;
+  return h;
+}
+
+async function api(url, opts){
+  opts = opts || {};
+  const res = await fetch(url, Object.assign({}, opts, {headers: authHeaders(opts.headers)}));
+  if(res.status === 401){
+    showGate("API key required");
+  }
+  return res;
+}
+
+function showGate(msg){
+  $("#authGate").classList.add("open");
+  if(msg){
+    $("#authErr").style.display="block";
+    $("#authErr").textContent=msg;
+  }
+}
+
+function hideGate(){
+  $("#authGate").classList.remove("open");
+  $("#authErr").style.display="none";
+}
+
+async function checkSession(){
+  const stored = sessionStorage.getItem("apiKey") || "";
+  if(stored){
+    const res = await fetch("/api/unlock", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({api_key:stored})
+    });
+    if(res.ok){
+      apiKey = stored;
+      hideGate();
+      loadDetectors();
+      loadDropbox();
+      return;
+    }
+  }
+  try{
+    const res = await fetch("/api/session");
+    const data = await res.json();
+    if(data.authenticated){
+      hideGate();
+      loadDetectors();
+      loadDropbox();
+    } else showGate("");
+  }catch(e){
+    showGate("Could not reach the server");
+  }
+}
+
+$("#unlockBtn").addEventListener("click", async ()=>{
+  const key = $("#apiKeyInput").value.trim();
+  const res = await fetch("/api/unlock", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({api_key:key})
+  });
+  if(!res.ok){
+    showGate("Invalid API key");
+    return;
+  }
+  apiKey = key;
+  sessionStorage.setItem("apiKey", key);
+  hideGate();
+  loadDetectors();
+  loadDropbox();
+});
+
+checkSession();
+
+// ---- source tabs ----
+$("#srcTabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  activeSrc = b.dataset.src;
+  document.querySelectorAll("#srcTabs button").forEach(x=>x.classList.toggle("active",x===b));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("active",p.dataset.pane===activeSrc));
+  scheduleAutoRun();
+});
+
+function loadDetectors(){
+fetch("/api/detectors", {headers: authHeaders()}).then(r=>r.json()).then(groups=>{
+  if(!groups || groups.error) return;
+  const host = $("#detectorList"); host.innerHTML="";
+  for(const [cat,items] of Object.entries(groups)){
+    const g=document.createElement("div"); g.className="group";
+    g.innerHTML=`<h3>${cat}</h3>`;
+    items.forEach(d=>{
+      const row=document.createElement("label"); row.className="chk"; row.title=d.description;
+      row.innerHTML=`<input type="checkbox" value="${d.key}" ${d.default_on?"checked":""}>
+        <span class="lab">${d.label}</span>${sevBadge(d.severity)}`;
+      g.appendChild(row);
+    });
+    host.appendChild(g);
+  }
+});
+}
+
+function loadDropbox(){
+fetch("/api/dropbox/status", {headers: authHeaders()}).then(r=>r.json()).then(s=>{
+  if(s.error) return;
+  $("#dbxStatus").textContent = s.enabled
+    ? "Connected. Enter a path or pick from your files."
+    : "Not configured — set DROPBOX_TOKEN to enable. (Sample & Upload still work.)";
+  if(s.enabled){
+    fetch("/api/dropbox/files", {headers: authHeaders()}).then(r=>r.json()).then(d=>{
+      if(!d.files) return;
+      const sel=document.createElement("select"); sel.style.marginTop="8px";
+      sel.innerHTML=`<option value="">— pick a PDF —</option>`+
+        d.files.map(f=>`<option value="${f.path}">${f.name}</option>`).join("");
+      sel.onchange=()=>{
+        if(sel.value) $("#dbxPath").value=sel.value;
+        scheduleAutoRun();
+      };
+      $("#dbxList").appendChild(sel);
+    });
+  }
+});
+}
+
+// ---- custom rules ----
+$("#addRule").addEventListener("click",()=>{
+  const row=document.createElement("div"); row.className="customrow";
+  row.innerHTML=`<input type="text" placeholder="Label (e.g. Employee ID)">
+    <input type="text" placeholder="Regex (e.g. EMP-\\d{5})">
+    <button class="addbtn" title="remove">×</button>`;
+  row.querySelector("button").onclick=()=>{
+    row.remove();
+    scheduleAutoRun();
+  };
+  $("#customRules").appendChild(row);
+});
+
+function gatherConfig(){
+  const enabled_keys=[...document.querySelectorAll("#detectorList input:checked")].map(i=>i.value);
+  const custom_rules=[...document.querySelectorAll(".customrow")].map(r=>{
+    const [lab,pat]=r.querySelectorAll("input");
+    return {label:lab.value.trim(), pattern:pat.value.trim()};
+  }).filter(r=>r.pattern);
+  return {enabled_keys, custom_rules};
+}
+
+function canRunCurrentSource(){
+  if(activeSrc==="sample") return true;
+  if(activeSrc==="upload") return Boolean($("#fileInput").files[0]);
+  return Boolean($("#dbxPath").value.trim());
+}
+
+function scheduleAutoRun(){
+  if(!$("#livePreview").checked) return;
+  if(!canRunCurrentSource()) return;
+  clearTimeout(autoRunTimer);
+  autoRunTimer = setTimeout(() => runRedaction({auto:true}), 450);
+}
+
+async function runRedaction({auto=false} = {}){
+  if(requestInFlight){
+    if(auto) rerunPending = true;
+    return;
+  }
+
+  const btn=$("#runBtn"); btn.disabled=true; btn.textContent="Redacting…";
+  const fd=new FormData();
+  fd.append("config_json", JSON.stringify(gatherConfig()));
+  fd.append("dpi", $("#dpi").value);
+  fd.append("mode", (document.querySelector('input[name="mode"]:checked')||{value:"surgical"}).value);
+  fd.append("pad", $("#pad").value.trim() || "2");
+  fd.append("vertical_shift_mm", $("#verticalShiftMm").value.trim() || "1.0");
+  fd.append("top_extra_mm", $("#topExtraMm").value.trim() || "0.0");
+  fd.append("bottom_extra_mm", $("#bottomExtraMm").value.trim() || "0.0");
+  if(activeSrc==="sample") fd.append("use_sample","true");
+  else if(activeSrc==="upload"){
+    const f=$("#fileInput").files[0];
+    if(!f){
+      if(!auto) alert("Choose a PDF to upload.");
+      btn.disabled=false; btn.textContent="Redact PDF";
+      return;
+    }
+    fd.append("file", f);
+  } else {
+    const path = $("#dbxPath").value.trim();
+    if(!path){
+      if(!auto) renderError("Choose a Dropbox PDF path.");
+      btn.disabled=false; btn.textContent="Redact PDF";
+      return;
+    }
+    fd.append("dropbox_path", path);
+    if($("#uploadBack").checked) fd.append("upload_back","true");
+  }
+  requestInFlight = true;
+  try{
+    const res=await fetch("/api/redact",{method:"POST",body:fd,headers:authHeaders()});
+    const data=await res.json();
+    if(!res.ok){ renderError(data.error||"Redaction failed."); }
+    else renderResults(data);
+  }catch(e){ renderError(e.message); }
+  requestInFlight = false;
+  btn.disabled=false; btn.textContent="Redact PDF";
+  if(rerunPending){
+    rerunPending = false;
+    scheduleAutoRun();
+  }
+}
+
+// ---- run ----
+$("#runBtn").addEventListener("click", ()=>runRedaction({auto:false}));
+
+document.addEventListener("change", e => {
+  if(e.target.matches("#detectorList input")) scheduleAutoRun();
+  if(e.target.matches("#fileInput")) scheduleAutoRun();
+  if(e.target.matches("#dbxPath, #uploadBack, #livePreview")) scheduleAutoRun();
+  if(e.target.matches('input[name="mode"]')) scheduleAutoRun();
+});
+
+document.addEventListener("input", e => {
+  if(e.target.matches(".customrow input")) scheduleAutoRun();
+  if(e.target.matches("#dbxPath, #pad, #verticalShiftMm, #topExtraMm, #bottomExtraMm")) scheduleAutoRun();
+});
+
+function renderError(msg){ $("#results").innerHTML=`<div class="err">⚠️ ${msg}</div>`; }
+
+function renderResults(data){
+  const r=data.report, v=r.verification;
+  const types=Object.values(r.summary.by_type);
+  const chips=types.map(t=>`<span class="chip"><b>${t.count}×</b> ${t.label}</span>`).join("");
+  const pages=data.pages||[];
+  const beforeImgs=pages.map((p,i)=>`<img class="pageimg pv before" data-i="${i}" src="${p.before}">`).join("");
+  const afterImgs =pages.map((p,i)=>`<img class="pageimg pv after"  data-i="${i}" src="${p.after}" style="display:none">`).join("");
+  const rows=r.items.map(it=>`<tr>
+      <td>${it.label}</td><td>${sevBadge(it.severity)}</td>
+      <td>${it.validated?"✓":"—"}</td><td>${it.page}</td><td><code>${it.masked_value}</code></td>
+    </tr>`).join("");
+  let dbx="";
+  if(data.dropbox){
+    dbx = data.dropbox.error
+      ? `<div class="err" style="margin-top:12px">Dropbox upload failed: ${data.dropbox.error}</div>`
+      : `<div class="verify pass" style="margin-top:12px">⬆ Redacted copy written to Dropbox: <code>${data.dropbox.uploaded_to}</code></div>`;
+  }
+
+  const banner = v.banner || (v.passed ? "surgical_ok" : "fail");
+  let bannerHtml;
+  if(banner === "flatten_ok"){
+    bannerHtml = `Text layer removed — visual miss not proven (re-scanned ${v.residual_extractable_chars} extractable chars)`;
+  }else if(banner === "surgical_ok"){
+    bannerHtml = `Redaction verified — no extractable PII remaining (re-scanned ${v.residual_extractable_chars} chars of residual text)`;
+  }else if(!v.matches_have_boxes){
+    bannerHtml = `Verification FAILED — one or more detections had no redaction box`;
+  }else if(v.leaked_values && v.leaked_values.length){
+    bannerHtml = `Verification FAILED — ${v.leaked_values.length} value(s) still extractable`;
+  }else if(v.error){
+    bannerHtml = `Verification FAILED — ${v.error}`;
+  }else{
+    bannerHtml = `Verification FAILED`;
+  }
+  const warn = (r.warnings||[]).map(w=>`<div class="err" style="margin-bottom:10px">${w}</div>`).join("");
+
+  $("#results").innerHTML=`
+    ${warn}
+    <div class="verify ${banner==="fail"?"fail":"pass"}">
+      ${bannerHtml}
+    </div>
+    <div class="stats">
+      <div class="stat"><b>${r.total_redactions}</b><span>Redactions</span></div>
+      <div class="stat"><b>${r.pages}</b><span>Pages</span></div>
+      <div class="stat"><b>${types.length}</b><span>PII types</span></div>
+    </div>
+    <div class="chips">${chips||'<span class="muted">No PII detected with the selected rules.</span>'}</div>
+
+    <div class="preview-head">
+      <h2 style="margin:0">Preview</h2>
+      <div class="toggle" id="pvToggle">
+        <button data-v="before">Before</button>
+        <button data-v="after" class="active">After (redacted)</button>
+      </div>
+    </div>
+    <div id="pvHost">${beforeImgs}${afterImgs}</div>
+
+    <h2 style="margin-top:18px">Audit report</h2>
+    <table><thead><tr><th>Type</th><th>Severity</th><th>Validated</th><th>Page</th><th>Value (masked)</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" class="muted">Nothing detected.</td></tr>'}</tbody></table>
+
+    <div class="downloads">
+      <a class="btn primary" style="width:auto" href="${data.downloads.pdf}" download>Download redacted PDF</a>
+      <a class="btn ghost" href="${data.downloads.report}" download>Download audit JSON</a>
+    </div>
+    ${dbx}`;
+
+  $("#pvToggle").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    document.querySelectorAll("#pvToggle button").forEach(x=>x.classList.toggle("active",x===b));
+    const showBefore=b.dataset.v==="before";
+    document.querySelectorAll(".pv.before").forEach(i=>i.style.display=showBefore?"block":"none");
+    document.querySelectorAll(".pv.after").forEach(i=>i.style.display=showBefore?"none":"block");
+  });
+}
+</script>
+</body>
+</html>
