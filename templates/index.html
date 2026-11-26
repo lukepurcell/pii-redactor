@@ -248,10 +248,12 @@ function currentTheme(){
   return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
 }
 
-function applyTheme(theme){
+function applyTheme(theme, {persist=false} = {}){
   const next = theme === "dark" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", next);
-  try{ localStorage.setItem("theme", next); }catch(e){}
+  if(persist){
+    try{ localStorage.setItem("theme", next); }catch(e){}
+  }
   const pressed = next === "dark";
   const btn = $("#themeToggle");
   if(btn){
@@ -264,7 +266,7 @@ function applyTheme(theme){
 
 applyTheme(currentTheme());
 $("#themeToggle").addEventListener("click", ()=>{
-  applyTheme(currentTheme() === "dark" ? "light" : "dark");
+  applyTheme(currentTheme() === "dark" ? "light" : "dark", {persist:true});
 });
 
 function authHeaders(extra){
