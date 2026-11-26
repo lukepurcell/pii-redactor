@@ -1,6 +1,10 @@
 # OS / editor
 .DS_Store
-.cursor/
+
+# Cursor local state — keep project rules versioned
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # Local tool state
 .claude/
