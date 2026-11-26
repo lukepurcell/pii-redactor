@@ -4,83 +4,129 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PII Redactor — MVP</title>
+<script>
+(function(){
+  try{
+    var stored = localStorage.getItem("theme");
+    var theme = (stored === "light" || stored === "dark")
+      ? stored
+      : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  }catch(e){
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+})();
+</script>
 <style>
   :root{
+    color-scheme: light;
     --bg:#f6f8fb; --panel:#ffffff; --ink:#13171f; --muted:#5b6472;
     --line:#e6eaf0; --accent:#0061fe; --accent-ink:#fff;
     --high:#d6253b; --medium:#c2790b; --low:#3a7d44; --ok:#16855c; --okbg:#e7f7ef;
     --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.06);
+    --surface:#eef1f6; --surface-2:#f4f7fb; --elevated:#fff;
+    --badge-high-bg:#fde8eb; --badge-medium-bg:#fbf0dd; --badge-low-bg:#e6f4ea;
+    --fail-bg:#fde8eb; --gate-scrim:rgba(246,248,251,.92);
+    --control-shadow:0 1px 2px rgba(0,0,0,.08);
+  }
+  [data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0f1419; --panel:#1a222d; --ink:#e8edf4; --muted:#9aa3b2;
+    --line:#2a3441; --accent:#3d8bfd; --accent-ink:#fff;
+    --high:#f07178; --medium:#e0a84a; --low:#6bcf7f; --ok:#3dba84; --okbg:#163528;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.4);
+    --surface:#243040; --surface-2:#1e2834; --elevated:#2a3544;
+    --badge-high-bg:#3a1f24; --badge-medium-bg:#3a2e1a; --badge-low-bg:#1a3224;
+    --fail-bg:#3a1f24; --gate-scrim:rgba(15,20,25,.92);
+    --control-shadow:0 1px 2px rgba(0,0,0,.4);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   header{background:var(--panel);border-bottom:1px solid var(--line);padding:18px 28px;
-    display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:5}
-  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;
-    display:grid;place-items:center;font-weight:700;font-size:18px}
+    display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:30}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);
+    display:grid;place-items:center;font-weight:700;font-size:18px;flex-shrink:0}
   header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
   header p{margin:0;color:var(--muted);font-size:12.5px}
+  .theme-switch{margin-left:auto;flex-shrink:0;display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 6px 4px 10px;
+    cursor:pointer;font:inherit;color:var(--muted);font-size:12.5px;font-weight:600}
+  .theme-switch:hover{color:var(--ink)}
+  .theme-switch .theme-label{min-width:2.6em}
+  .theme-switch .track{position:relative;width:40px;height:22px;border-radius:999px;
+    background:var(--elevated);box-shadow:inset 0 0 0 1px var(--line);transition:background .2s}
+  .theme-switch .thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);box-shadow:var(--control-shadow);transition:transform .2s}
+  [data-theme="dark"] .theme-switch .thumb{transform:translateX(18px)}
   .wrap{max-width:1180px;margin:24px auto;padding:0 20px;display:grid;
     grid-template-columns:380px 1fr;gap:20px;align-items:start}
-  @media(max-width:880px){.wrap{grid-template-columns:1fr}}
+  @media(max-width:880px){
+    .wrap{grid-template-columns:1fr}
+    header{padding:14px 16px;gap:10px}
+    .theme-switch .theme-label{display:none}
+  }
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:18px 18px}
   .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
     margin:0 0 12px}
   .step{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;
-    background:var(--accent);color:#fff;font-size:11px;margin-right:7px;vertical-align:1px}
-  .tabs{display:flex;gap:6px;background:#eef1f6;padding:4px;border-radius:10px;margin-bottom:12px}
+    background:var(--accent);color:var(--accent-ink);font-size:11px;margin-right:7px;vertical-align:1px}
+  .tabs{display:flex;gap:6px;background:var(--surface);padding:4px;border-radius:10px;margin-bottom:12px}
   .tabs button{flex:1;border:0;background:transparent;padding:7px 8px;border-radius:7px;
     font-size:13px;color:var(--muted);cursor:pointer;font-weight:550}
-  .tabs button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .tabs button.active{background:var(--elevated);color:var(--ink);box-shadow:var(--control-shadow)}
   .pane{display:none} .pane.active{display:block}
-  label.file,input[type=text]{width:100%}
-  input[type=text]{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit}
+  label.file,input[type=text],input[type=password]{width:100%}
+  input[type=text],input[type=password],select{
+    padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;
+    background:var(--panel);color:var(--ink)}
   .muted{color:var(--muted);font-size:13px}
   .group{margin-bottom:14px}
   .group h3{font-size:12.5px;margin:0 0 7px;color:var(--ink);font-weight:650}
   .chk{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px}
-  .chk:hover{background:#f4f7fb}
+  .chk:hover{background:var(--surface-2)}
   .chk input{width:16px;height:16px;accent-color:var(--accent)}
   .chk .lab{flex:1;font-size:13.5px}
   .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em}
-  .b-high{background:#fde8eb;color:var(--high)} .b-medium{background:#fbf0dd;color:var(--medium)}
-  .b-low{background:#e6f4ea;color:var(--low)}
+  .b-high{background:var(--badge-high-bg);color:var(--high)}
+  .b-medium{background:var(--badge-medium-bg);color:var(--medium)}
+  .b-low{background:var(--badge-low-bg);color:var(--low)}
   .customrow{display:flex;gap:6px;margin-bottom:6px}
   .customrow input{flex:1}
-  .btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer}
-  .btn.primary{background:var(--accent);color:#fff;width:100%;font-size:15px;padding:13px}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:650;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);width:100%;font-size:15px;padding:13px}
   .btn.primary:disabled{opacity:.55;cursor:progress}
-  .btn.ghost{background:#eef1f6;color:var(--ink)}
+  .btn.ghost{background:var(--surface);color:var(--ink)}
   .btn.link{background:transparent;color:var(--accent);padding:4px 6px}
-  .addbtn{background:#eef1f6;color:var(--ink);border-radius:8px;border:0;padding:8px 10px;cursor:pointer;font-weight:600;font-size:13px}
-  select{padding:9px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;width:100%}
+  .addbtn{background:var(--surface);color:var(--ink);border-radius:8px;border:0;padding:8px 10px;cursor:pointer;font-weight:600;font-size:13px}
+  select{width:100%}
   /* results */
   #results{min-height:200px}
   .placeholder{display:grid;place-items:center;height:340px;color:var(--muted);text-align:center}
   .placeholder svg{opacity:.35;margin-bottom:10px}
   .verify{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:11px;font-weight:600;margin-bottom:14px}
   .verify.pass{background:var(--okbg);color:var(--ok)}
-  .verify.fail{background:#fde8eb;color:var(--high)}
+  .verify.fail{background:var(--fail-bg);color:var(--high)}
   .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-  .stat{background:#f4f7fb;border-radius:11px;padding:10px 14px;min-width:96px}
+  .stat{background:var(--surface-2);border-radius:11px;padding:10px 14px;min-width:96px}
   .stat b{display:block;font-size:22px;letter-spacing:-.02em}
   .stat span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
-  .chip{font-size:12.5px;background:#eef1f6;border-radius:999px;padding:5px 11px}
+  .chip{font-size:12.5px;background:var(--surface);border-radius:999px;padding:5px 11px}
   .chip b{color:var(--accent)}
   .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .toggle{display:flex;background:#eef1f6;border-radius:9px;padding:3px}
+  .toggle{display:flex;background:var(--surface);border-radius:9px;padding:3px}
   .toggle button{border:0;background:transparent;padding:6px 14px;border-radius:7px;font:inherit;font-weight:600;font-size:13px;color:var(--muted);cursor:pointer}
-  .toggle button.active{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .toggle button.active{background:var(--elevated);color:var(--ink);box-shadow:var(--control-shadow)}
   .pageimg{width:100%;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;display:block}
   table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
-  td code{background:#f4f7fb;padding:1px 6px;border-radius:6px}
+  td code, .gate code, .muted code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
   .downloads{display:flex;gap:10px;margin:16px 0 4px}
   .dbx-note{font-size:12.5px;color:var(--muted);margin-top:6px}
-  .gate{position:fixed;inset:0;background:rgba(246,248,251,.92);z-index:20;
+  .gate{position:fixed;inset:0;background:var(--gate-scrim);z-index:20;
     display:none;place-items:center;padding:24px}
   .gate.open{display:grid}
   .gate .card{max-width:420px;width:100%}
@@ -103,6 +149,10 @@
     <h1>PII Redactor</h1>
     <p>Detect &amp; permanently redact sensitive data in PDFs</p>
   </div>
+  <button type="button" class="theme-switch" id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+    <span class="theme-label" id="themeLabel">Light</span>
+    <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+  </button>
 </header>
 
 <div class="wrap">
@@ -193,6 +243,29 @@ let requestInFlight = false;
 let rerunPending = false;
 
 let apiKey = sessionStorage.getItem("apiKey") || "";
+
+function currentTheme(){
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
+function applyTheme(theme){
+  const next = theme === "dark" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  try{ localStorage.setItem("theme", next); }catch(e){}
+  const pressed = next === "dark";
+  const btn = $("#themeToggle");
+  if(btn){
+    btn.setAttribute("aria-pressed", pressed ? "true" : "false");
+    btn.setAttribute("aria-label", pressed ? "Switch to light mode" : "Switch to dark mode");
+  }
+  const label = $("#themeLabel");
+  if(label) label.textContent = pressed ? "Dark" : "Light";
+}
+
+applyTheme(currentTheme());
+$("#themeToggle").addEventListener("click", ()=>{
+  applyTheme(currentTheme() === "dark" ? "light" : "dark");
+});
 
 function authHeaders(extra){
   const h = Object.assign({}, extra || {});
